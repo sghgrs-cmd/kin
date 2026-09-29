@@ -221,8 +221,15 @@
         }
         .note-input::placeholder { color: #475569; }
 
+        .button-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            width: 100%;
+        }
+
         .btn-toggle {
-            align-self: flex-start;
+            flex: 1 1 auto;
             padding: 8px 16px;
             border-radius: 6px;
             font-size: 9.5pt;
@@ -231,6 +238,7 @@
             cursor: pointer;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
             transition: all 0.2s;
             border: none;
@@ -249,6 +257,35 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         .btn-mark-unwatched:hover { background: rgba(255, 255, 255, 0.1); color: #f1f5f9; }
+
+        .btn-link {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 9.5pt;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: all 0.2s;
+            flex: 1 1 auto;
+            text-align: center;
+        }
+        
+        .btn-kp {
+            background: rgba(249, 115, 22, 0.15);
+            color: #fdba74;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+        .btn-kp:hover { background: rgba(249, 115, 22, 0.25); }
+        
+        .btn-google {
+            background: rgba(59, 130, 246, 0.15);
+            color: #93c5fd;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .btn-google:hover { background: rgba(59, 130, 246, 0.25); }
 
         .empty-state {
             text-align: center;
@@ -288,7 +325,7 @@
             .header-logo { font-size: 20pt; }
             .header-text h1 { font-size: 13pt; }
             .item-top { flex-direction: column; align-items: flex-start; }
-            .btn-toggle { width: 100%; justify-content: center; padding: 12px; }
+            .btn-toggle, .btn-link { width: 100%; flex: 1 1 100%; }
             .saga-banner { font-size: 10pt; text-align: center; }
             .tabs { flex-direction: column; gap: 4px; }
         }
@@ -479,6 +516,11 @@
                     const isWatched = userState[movie.id] ? userState[movie.id].watched : false;
                     const noteText = userState[movie.id] ? userState[movie.id].note : '';
                     
+                    // Удаляем HTML-теги (например, span) из названия, чтобы поиск был точным
+                    const cleanTitle = movie.title.replace(/<[^>]*>?/gm, '').trim();
+                    const kpUrl = `https://www.kinopoisk.ru/index.php?kp_query=${encodeURIComponent(cleanTitle)}`;
+                    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(cleanTitle + ' Marvel смотреть')}`;
+
                     const btnHtml = isWatched 
                         ? `<button class="btn-toggle btn-mark-unwatched" onclick="toggleWatched(${movie.id})">↩ Вернуть в «Надо посмотреть»</button>`
                         : `<button class="btn-toggle btn-mark-watched" onclick="toggleWatched(${movie.id})">✔ Отметить как просмотренное</button>`;
@@ -494,7 +536,11 @@
                             </div>
                             <div class="item-actions">
                                 <textarea class="note-input" placeholder="Ваши впечатления, оценка, дата просмотра..." onchange="saveNote(${movie.id}, this.value)">${noteText}</textarea>
-                                ${btnHtml}
+                                <div class="button-group">
+                                    ${btnHtml}
+                                    <a href="${kpUrl}" target="_blank" class="btn-link btn-kp">🍿 Кинопоиск</a>
+                                    <a href="${googleUrl}" target="_blank" class="btn-link btn-google">🔍 Google</a>
+                                </div>
                             </div>
                         </div>
                     `;
