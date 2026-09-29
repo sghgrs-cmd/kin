@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Интерактивная Хронология MARVEL</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background-color: #0f1115; }
+        
+        body { 
+            font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            color: #f8fafc;
+            line-height: 1.5;
+        }
+
+        /* Container & Spine */
+        .app-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px 20px 60px 32px;
+            position: relative;
+            min-height: 100vh;
+        }
+
+        .app-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 6px;
+            height: 100%;
+            background: linear-gradient(to bottom, #dc2626, #7f1d1d);
+            position: fixed;
+        }
+
+        /* Header */
+        .header { 
+            display: flex; 
+            align-items: center; 
+            margin-bottom: 24px; 
+            border-bottom: 1px solid rgba(255,255,255,0.1); 
+            padding-bottom: 20px; 
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .header-logo { 
+            background: #e23636; 
+            color: #ffffff; 
+            font-family: Impact, 'Arial Black', sans-serif; 
+            font-size: 26pt; 
+            padding: 4px 12px; 
+            letter-spacing: -1px; 
+            border-radius: 2px;
+        }
+        .header-text h1 { 
+            font-size: 16pt; 
+            margin: 0 0 4px 0; 
+            text-transform: uppercase; 
+            letter-spacing: 1.5px; 
+            color: #f8fafc; 
+        }
+        .header-text p { 
+            font-size: 10pt; 
+            color: #94a3b8; 
+            margin: 0; 
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 6px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 11pt;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .tab-btn:hover { color: #f8fafc; background: rgba(255,255,255,0.05); }
+        .tab-btn.active {
+            background: #ef4444;
+            color: white;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+        }
+
+        /* Banners & Headers */
+        .saga-banner {
+            background: linear-gradient(90deg, #7f1d1d, #b91c1c);
+            color: white;
+            padding: 10px 16px;
+            font-size: 12pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-radius: 6px;
+            margin: 30px 0 16px 0;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.1);
+        }
+        .saga-banner.multi { 
+            background: linear-gradient(90deg, #4c1d95, #7c3aed); 
+        }
+        
+        .era-header {
+            color: #fbbf24;
+            font-size: 14pt;
+            margin: 24px 0 16px 0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px dashed rgba(255,255,255,0.1);
+            padding-bottom: 8px;
+        }
+
+        /* List Items */
+        .m-list { display: flex; flex-direction: column; gap: 16px; }
+        .m-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 16px;
+            border-radius: 12px;
+            transition: border-color 0.3s ease, background 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .m-item:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .item-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        
+        .item-title-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .m-num {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 8px;
+            font-weight: 700;
+            color: #ef4444;
+            font-size: 11pt;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        
+        .m-title {
+            font-size: 12pt;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+        .m-title .sub-title {
+            color: #94a3b8;
+            font-size: 0.85em;
+            margin-left: 6px;
+            font-weight: 400;
+        }
+
+        /* Tags */
+        .m-tags { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .tag {
+            font-size: 8pt;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .tag-year { border: 1px solid #475569; color: #94a3b8; }
+        .tag-series { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3); }
+        .tag-anim { background: rgba(139, 92, 246, 0.15); color: #c4b5fd; border: 1px solid rgba(139, 92, 246, 0.3); }
+        .tag-spec { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
+        .tag-neutral { background: rgba(255, 255, 255, 0.08); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.15); }
+
+        /* Notes & Actions */
+        .item-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .note-input {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #e2e8f0;
+            font-family: inherit;
+            font-size: 10pt;
+            resize: vertical;
+            min-height: 44px;
+            transition: border-color 0.3s;
+        }
+        .note-input:focus {
+            outline: none;
+            border-color: #ef4444;
+        }
+        .note-input::placeholder { color: #475569; }
+
+        .btn-toggle {
+            align-self: flex-start;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 9.5pt;
+            font-weight: 600;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .btn-mark-watched {
+            background: rgba(34, 197, 94, 0.15);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+        .btn-mark-watched:hover { background: rgba(34, 197, 94, 0.25); }
+        
+        .btn-mark-unwatched {
+            background: rgba(255, 255, 255, 0.05);
+            color: #94a3b8;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-mark-unwatched:hover { background: rgba(255, 255, 255, 0.1); color: #f1f5f9; }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #64748b;
+            font-size: 12pt;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            height: 12px;
+            margin-bottom: 30px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #dc2626, #ef4444);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .progress-text {
+            position: absolute;
+            top: -24px;
+            right: 0;
+            font-size: 9pt;
+            color: #94a3b8;
+        }
+
+        /* Mobile Adjustments */
+        @media screen and (max-width: 600px) {
+            .app-container { padding: 16px 16px 40px 24px; }
+            .app-container::before { width: 4px; }
+            .header-logo { font-size: 20pt; }
+            .header-text h1 { font-size: 13pt; }
+            .item-top { flex-direction: column; align-items: flex-start; }
+            .btn-toggle { width: 100%; justify-content: center; padding: 12px; }
+            .saga-banner { font-size: 10pt; text-align: center; }
+            .tabs { flex-direction: column; gap: 4px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="header">
+        <div class="header-logo">MARVEL</div>
+        <div class="header-text">
+            <h1>Хронология Киновселенной</h1>
+            <p>От старта до Судного дня • Личный трекер</p>
+        </div>
+    </div>
+
+    <div class="progress-container">
+        <div class="progress-text" id="progressText">0 / 60 просмотрено</div>
+        <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="tabs">
+        <button class="tab-btn active" id="tab-towatch" onclick="setTab('towatch')">👀 Надо посмотреть</button>
+        <button class="tab-btn" id="tab-watched" onclick="setTab('watched')">✅ Просмотрено</button>
+    </div>
+
+    <div id="content-area">
+        <!-- Content will be generated by JS -->
+    </div>
+</div>
+
+<script>
+    // Исходные данные со всеми 60 проектами
+    const defaultData = [
+        // Эра 1
+        { id: 1, title: 'Первый мститель', era: 1, tags: '<span class="tag tag-year">2011</span>' },
+        { id: 2, title: 'Капитан Марвел', era: 1, tags: '<span class="tag tag-year">2019</span>' },
+        { id: 3, title: 'Железный человек', era: 1, tags: '<span class="tag tag-year">2008</span>' },
+        { id: 4, title: 'Железный человек 2', era: 1, tags: '<span class="tag tag-year">2010</span>' },
+        { id: 5, title: 'Невероятный Халк', era: 1, tags: '<span class="tag tag-year">2008</span>' },
+        { id: 6, title: 'Тор', era: 1, tags: '<span class="tag tag-year">2011</span>' },
+        { id: 7, title: 'Мстители', era: 1, tags: '<span class="tag tag-year">2012</span>' },
+        // Эра 2
+        { id: 8, title: 'Железный человек 3', era: 2, tags: '<span class="tag tag-year">2013</span>' },
+        { id: 9, title: 'Тор 2: Царство тьмы', era: 2, tags: '<span class="tag tag-year">2013</span>' },
+        { id: 10, title: 'Первый мститель: Другая война', era: 2, tags: '<span class="tag tag-year">2014</span>' },
+        { id: 11, title: 'Стражи Галактики', era: 2, tags: '<span class="tag tag-year">2014</span>' },
+        { id: 12, title: 'Стражи Галактики. Часть 2', era: 2, tags: '<span class="tag tag-year">2017</span>' },
+        { id: 13, title: 'Мстители: Эра Альтрона', era: 2, tags: '<span class="tag tag-year">2015</span>' },
+        { id: 14, title: 'Человек-муравей', era: 2, tags: '<span class="tag tag-year">2015</span>' },
+        { id: 15, title: 'Первый мститель: Противостояние', era: 2, tags: '<span class="tag tag-year">2016</span>' },
+        { id: 16, title: 'Чёрная вдова', era: 2, tags: '<span class="tag tag-year">2021</span>' },
+        { id: 17, title: 'Чёрная Пантера', era: 2, tags: '<span class="tag tag-year">2018</span>' },
+        { id: 18, title: 'Человек-паук: Возвращение домой', era: 2, tags: '<span class="tag tag-year">2017</span>' },
+        { id: 19, title: 'Доктор Стрэндж', era: 2, tags: '<span class="tag tag-year">2016</span>' },
+        { id: 20, title: 'Тор: Рагнарёк', era: 2, tags: '<span class="tag tag-year">2017</span>' },
+        { id: 21, title: 'Человек-муравей и Оса', era: 2, tags: '<span class="tag tag-year">2018</span>' },
+        // Эра 3
+        { id: 22, title: 'Мстители: Война бесконечности', era: 3, tags: '<span class="tag tag-year">2018</span>' },
+        { id: 23, title: 'Мстители: Финал', era: 3, tags: '<span class="tag tag-year">2019</span>' },
+        // Эра 4
+        { id: 24, title: 'Локи', era: 4, tags: '<span class="tag tag-series">Сериал</span><span class="tag tag-neutral">1 сезон</span>' },
+        { id: 25, title: 'Что, если…?', era: 4, tags: '<span class="tag tag-anim">Мультсериал</span><span class="tag tag-neutral">1 сезон</span>' },
+        { id: 26, title: 'Ванда/Вижн', era: 4, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 27, title: 'Сокол и Зимний солдат', era: 4, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 28, title: 'Шан-Чи и легенда десяти колец', era: 4, tags: '' },
+        { id: 29, title: 'Вечные', era: 4, tags: '' },
+        { id: 30, title: 'Человек-паук: Вдали от дома', era: 4, tags: '' },
+        { id: 31, title: 'Человек-паук: Нет пути домой', era: 4, tags: '' },
+        { id: 32, title: 'Доктор Стрэндж: В мультивселенной безумия', era: 4, tags: '' },
+        { id: 33, title: 'Соколиный глаз', era: 4, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 34, title: 'Лунный рыцарь', era: 4, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 35, title: 'Чёрная Пантера: Ваканда навеки', era: 4, tags: '' },
+        { id: 36, title: 'Эхо', era: 4, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 37, title: 'Женщина-Халк: Адвокат', era: 4, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 38, title: 'Мисс Марвел', era: 4, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 39, title: 'Тор: Любовь и гром', era: 4, tags: '' },
+        { id: 40, title: 'Ночной оборотень', era: 4, tags: '<span class="tag tag-spec">Спецвыпуск</span>' },
+        { id: 41, title: 'Стражи Галактики: Праздничный спецвыпуск', era: 4, tags: '<span class="tag tag-spec">Спецвыпуск</span>' },
+        { id: 42, title: 'Человек-муравей и Оса: Квантомания', era: 4, tags: '' },
+        { id: 43, title: 'Локи', era: 4, tags: '<span class="tag tag-series">Сериал</span><span class="tag tag-neutral">2 сезон</span>' },
+        { id: 44, title: 'Стражи Галактики. Часть 3', era: 4, tags: '' },
+        { id: 45, title: 'Секретное вторжение', era: 4, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 46, title: 'Марвелы', era: 4, tags: '' },
+        { id: 47, title: 'Что, если…?', era: 4, tags: '<span class="tag tag-anim">Мультсериал</span><span class="tag tag-neutral">2 и 3 сезоны</span>' },
+        { id: 48, title: 'Люди Икс \'97', era: 4, tags: '<span class="tag tag-anim">Мультсериал</span><span class="tag tag-neutral">1 сезон</span>' },
+        { id: 49, title: 'Дэдпул и Росомаха', era: 4, tags: '' },
+        { id: 50, title: 'Это всё Агата', era: 4, tags: '<span class="tag tag-series">Сериал</span>' },
+        // Эра 5
+        { id: 51, title: 'Ваш дружелюбный сосед Человек-паук', era: 5, tags: '<span class="tag tag-anim">Мультсериал</span>' },
+        { id: 52, title: 'Капитан Америка: Дивный новый мир', era: 5, tags: '' },
+        { id: 53, title: 'Сорвиголова: Рожденный заново', era: 5, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 54, title: 'Громовержцы*', era: 5, tags: '' },
+        { id: 55, title: 'Фантастическая четвёрка: Первые шаги', era: 5, tags: '' },
+        { id: 56, title: 'Железное сердце', era: 5, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 57, title: 'Очи Ваканды', era: 5, tags: '<span class="tag tag-anim">Мультсериал</span>' },
+        { id: 58, title: 'Чудо-человек', era: 5, tags: '<span class="tag tag-series">Сериал</span>' },
+        { id: 59, title: 'Человек-паук: Новый день <span class="sub-title">(Brand New Day)</span>', era: 5, tags: '' },
+        { id: 60, title: 'Мстители: Судный день <span class="sub-title">(Avengers: Doomsday)</span>', era: 5, tags: '' }
+    ];
+
+    const erasTitles = {
+        1: "Эра 1: Зарождение и первые Мстители",
+        2: "Эра 2: Камни Бесконечности и раскол",
+        3: "Эра 3: Кульминация Саги Бесконечности",
+        4: "Эра 4: Мультивселенная и её последствия",
+        5: "Эра 5: Напрямую к Судному дню"
+    };
+
+    let currentTab = 'towatch'; // 'towatch' или 'watched'
+    let userState = JSON.parse(localStorage.getItem('marvelTrackerData')) || {};
+
+    function saveState() {
+        localStorage.setItem('marvelTrackerData', JSON.stringify(userState));
+        updateProgress();
+    }
+
+    function updateProgress() {
+        let watchedCount = Object.values(userState).filter(item => item.watched).length;
+        let total = defaultData.length;
+        let percentage = (watchedCount / total) * 100;
+        
+        document.getElementById('progressBar').style.width = `${percentage}%`;
+        document.getElementById('progressText').innerText = `${watchedCount} / ${total} просмотрено`;
+    }
+
+    function toggleWatched(id) {
+        if (!userState[id]) userState[id] = { watched: false, note: '' };
+        userState[id].watched = !userState[id].watched;
+        saveState();
+        render();
+    }
+
+    function saveNote(id, text) {
+        if (!userState[id]) userState[id] = { watched: false, note: '' };
+        userState[id].note = text;
+        saveState();
+    }
+
+    function setTab(tab) {
+        currentTab = tab;
+        document.getElementById('tab-towatch').classList.toggle('active', tab === 'towatch');
+        document.getElementById('tab-watched').classList.toggle('active', tab === 'watched');
+        render();
+    }
+
+    function render() {
+        const container = document.getElementById('content-area');
+        container.innerHTML = '';
+
+        let hasItemsInTab = false;
+
+        // Сага Бесконечности Баннер (Эры 1-3)
+        let saga1Added = false;
+        // Сага Мультивселенной Баннер (Эры 4-5)
+        let saga2Added = false;
+
+        for (let era = 1; era <= 5; era++) {
+            // Фильтруем фильмы текущей эры в зависимости от вкладки
+            const eraMovies = defaultData.filter(movie => {
+                if (movie.era !== era) return false;
+                const isWatched = userState[movie.id] ? userState[movie.id].watched : false;
+                return currentTab === 'watched' ? isWatched : !isWatched;
+            });
+
+            if (eraMovies.length > 0) {
+                hasItemsInTab = true;
+
+                // Добавляем баннеры Саг, если нужно
+                if (era <= 3 && !saga1Added) {
+                    container.innerHTML += `<div class="saga-banner">Сага Бесконечности</div>`;
+                    saga1Added = true;
+                }
+                if (era >= 4 && !saga2Added) {
+                    container.innerHTML += `<div class="saga-banner multi">Сага Мультивселенной</div>`;
+                    saga2Added = true;
+                }
+
+                // Заголовок Эры
+                container.innerHTML += `<div class="era-header">${erasTitles[era]}</div>`;
+                
+                // Список фильмов
+                const listDiv = document.createElement('div');
+                listDiv.className = 'm-list';
+
+                eraMovies.forEach(movie => {
+                    const numStr = movie.id < 10 ? '0' + movie.id : movie.id;
+                    const isWatched = userState[movie.id] ? userState[movie.id].watched : false;
+                    const noteText = userState[movie.id] ? userState[movie.id].note : '';
+                    
+                    const btnHtml = isWatched 
+                        ? `<button class="btn-toggle btn-mark-unwatched" onclick="toggleWatched(${movie.id})">↩ Вернуть в «Надо посмотреть»</button>`
+                        : `<button class="btn-toggle btn-mark-watched" onclick="toggleWatched(${movie.id})">✔ Отметить как просмотренное</button>`;
+
+                    const itemHtml = `
+                        <div class="m-item">
+                            <div class="item-top">
+                                <div class="item-title-group">
+                                    <div class="m-num">${numStr}</div>
+                                    <div class="m-title">${movie.title}</div>
+                                </div>
+                                <div class="m-tags">${movie.tags}</div>
+                            </div>
+                            <div class="item-actions">
+                                <textarea class="note-input" placeholder="Ваши впечатления, оценка, дата просмотра..." onchange="saveNote(${movie.id}, this.value)">${noteText}</textarea>
+                                ${btnHtml}
+                            </div>
+                        </div>
+                    `;
+                    listDiv.innerHTML += itemHtml;
+                });
+                
+                container.appendChild(listDiv);
+            }
+        }
+
+        if (!hasItemsInTab) {
+            const emptyMsg = currentTab === 'watched' 
+                ? "Вы еще ничего не отметили как просмотренное. Пора начинать марафон!"
+                : "Отличная работа! Вы посмотрели абсолютно всё из списка.";
+            container.innerHTML = `<div class="empty-state">${emptyMsg}</div>`;
+        }
+    }
+
+    // Инициализация при загрузке
+    updateProgress();
+    render();
+</script>
+
+</body>
+</html>
